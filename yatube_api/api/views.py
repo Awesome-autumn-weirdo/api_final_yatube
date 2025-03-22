@@ -76,10 +76,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         post_id = self.kwargs['post_id']
         # Проверяем, существует ли пост
-        try:
-            post = get_object_or_404(Post, id=post_id)
-        except:
-            return Response({"detail": "Страница не найдена."}, status=status.HTTP_404_NOT_FOUND)
+        post = get_object_or_404(Post, id=post_id)
 
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
@@ -88,10 +85,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
         # Проверяем, существует ли пост
-        try:
-            post = get_object_or_404(Post, id=post_id)
-        except:
-            return Response({"detail": "Страница не найдена."}, status=status.HTTP_404_NOT_FOUND)
+        post = get_object_or_404(Post, id=post_id)
 
         serializer.save(author=self.request.user, post=post)
 
