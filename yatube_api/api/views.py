@@ -1,18 +1,22 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.serializers import TokenVerifySerializer, TokenRefreshSerializer, \
-    TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import (TokenVerifySerializer, \
+    TokenRefreshSerializer, TokenObtainPairSerializer)
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.views import TokenVerifyView, TokenRefreshView, TokenObtainPairView
+from rest_framework_simplejwt.views import (TokenVerifyView, \
+    TokenRefreshView, TokenObtainPairView)
 
 from posts.models import Post, Comment, Group, Follow
-from .serializers import PostSerializer, CommentSerializer, GroupSerializer, FollowSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from .serializers import (PostSerializer, CommentSerializer, \
+                          GroupSerializer, FollowSerializer)
+from rest_framework.permissions import (IsAuthenticatedOrReadOnly, \
+                                        IsAuthenticated)
 from posts.permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
+
 
 class CustomTokenVerifySerializer(TokenVerifySerializer):
     def validate(self, attrs):
@@ -25,6 +29,7 @@ class CustomTokenVerifySerializer(TokenVerifySerializer):
         user = User.objects.get(id=user_id)
         data['username'] = user.username
         return data
+
 
 class CustomTokenVerifyView(TokenVerifyView):
     serializer_class = CustomTokenVerifySerializer
@@ -46,6 +51,7 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         data['username'] = user.username
         return data
 
+
 class CustomTokenRefreshView(TokenRefreshView):
     serializer_class = CustomTokenRefreshSerializer
 
@@ -55,6 +61,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         data['username'] = self.user.username
         return data
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -67,6 +74,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
@@ -81,9 +89,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         post = Post.objects.get(id=post_id)
         serializer.save(author=self.request.user, post=post)
 
+
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer

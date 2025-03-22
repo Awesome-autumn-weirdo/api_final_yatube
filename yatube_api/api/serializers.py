@@ -3,6 +3,7 @@ from posts.models import Comment, Post, Follow, Group
 
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 
+
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
         fields = ['id', 'username', 'password']
@@ -32,6 +33,7 @@ class FollowSerializer(serializers.ModelSerializer):
                                         read_only=True)
     following = serializers.SlugRelatedField(slug_field='username',
                                              read_only=True)
+
     class Meta:
         model = Follow
         fields = ['user', 'following']
