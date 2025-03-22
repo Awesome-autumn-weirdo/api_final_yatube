@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -73,13 +74,25 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(post_id=post_id).order_by('-created')
 
     def list(self, request, *args, **kwargs):
+        post_id = self.kwargs['post_id']
+        # Проверяем, существует ли пост
+        try:
+            post = get_object_or_404(Post, id=post_id)
+        except:
+            return Response({"detail": "Страница не найдена."}, status=status.HTTP_404_NOT_FOUND)
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     def perform_create(self, serializer):
         post_id = self.kwargs['post_id']
-        post = Post.objects.get(id=post_id)
+        # Проверяем, существует ли пост
+        try:
+            post = get_object_or_404(Post, id=post_id)
+        except:
+            return Response({"detail": "Страница не найдена."}, status=status.HTTP_404_NOT_FOUND)
+
         serializer.save(author=self.request.user, post=post)
 
 
@@ -101,8 +114,8 @@ class FollowViewSet(viewsets.ModelViewSet):
         queryset = Follow.objects.filter(user=self.request.user)
         search_query = self.request.query_params.get('search', None)
         if search_query:
-            queryset = (
-                queryset.filter(following__username__icontains=search_query)
+            queryset = queryset.filter(
+                following__username__icontains=search_query
             )
         return queryset
 
@@ -116,7 +129,16 @@ class FollowViewSet(viewsets.ModelViewSet):
         following_username = self.request.data.get('following')
         try:
             following_user = User.objects.get(username=following_username)
+            # Проверяем, существует ли уже подписка
+            if Follow.objects.filter(user=user,
+                                     following=following_user).exists():
+                return Response(
+                    {"error": "Вы уже подписаны на этого пользователя."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             serializer.save(user=user, following=following_user)
         except User.DoesNotExist:
-            return Response({"error": "User not found"},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Пользователь не найден."},
+                status=status.HTTP_404_NOT_FOUND
+            )

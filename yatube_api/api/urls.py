@@ -14,9 +14,11 @@ router.register(r'v1/users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('api/token/', CustomTokenObtainPairView.as_view(),
-         name='token_obtain_pair'),
-    path('api/token/refresh/', CustomTokenRefreshView.as_view(),
+    path('api/v1/jwt/create/',
+         CustomTokenObtainPairView.as_view(),
+         name='token_obtain_pair'
+         ),
+    path('api/v1/jwt/refresh/', CustomTokenRefreshView.as_view(),
          name='token_refresh'),
     path('api/', include('djoser.urls')),
     path('api/', include('djoser.urls.jwt')),
