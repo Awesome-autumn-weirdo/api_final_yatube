@@ -7,10 +7,10 @@ from .views import (
 from djoser.views import UserViewSet
 
 router = DefaultRouter()
-router.register(r'posts', PostViewSet, basename='post')
-router.register(r'groups', GroupViewSet, basename='group')
-router.register(r'follow', FollowViewSet, basename='follow')
-router.register(r'users', UserViewSet, basename='user')
+router.register(r'v1/posts', PostViewSet, basename='post')
+router.register(r'v1/groups', GroupViewSet, basename='group')
+router.register(r'v1/follow', FollowViewSet, basename='follow')
+router.register(r'v1/users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),
