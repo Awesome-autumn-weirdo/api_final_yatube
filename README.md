@@ -17,10 +17,11 @@ Django REST Framework и Djoser для аутентификации.
 - Подписка на авторов
 - Группы для объединения пользователей
 - Аутентификация через JWT-токены
-
+```
 Установка
 
-1. Клонирование репозитория:
+### 1. Клонирование репозитория:
+```sh
 git clone https://github.com/Awesome-autumn-weirdo/api_final_yatube.git
 ```
 
