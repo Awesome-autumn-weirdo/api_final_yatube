@@ -1,18 +1,29 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.serializers import (TokenVerifySerializer, \
-    TokenRefreshSerializer, TokenObtainPairSerializer)
+from rest_framework_simplejwt.serializers import (
+    TokenVerifySerializer,
+    TokenRefreshSerializer,
+    TokenObtainPairSerializer,
+)
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.views import (TokenVerifyView, \
-    TokenRefreshView, TokenObtainPairView)
+from rest_framework_simplejwt.views import (
+    TokenVerifyView,
+    TokenRefreshView,
+    TokenObtainPairView,
+)
 
 from posts.models import Post, Comment, Group, Follow
-from .serializers import (PostSerializer, CommentSerializer, \
-                          GroupSerializer, FollowSerializer)
-from rest_framework.permissions import (IsAuthenticatedOrReadOnly, \
-                                        IsAuthenticated)
+from .serializers import (
+    PostSerializer,
+    CommentSerializer,
+    GroupSerializer,
+    FollowSerializer,
+)
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated,
+)
 from posts.permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
