@@ -1,10 +1,54 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import (
+    TokenVerifySerializer,
+    TokenRefreshSerializer,
+    TokenObtainPairSerializer,
+)
+from rest_framework_simplejwt.tokens import AccessToken
+
 from posts.models import Comment, Post, Follow, Group
 
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 
 User = get_user_model()
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        try:
+            data = super().validate(attrs)
+            data['username'] = self.user.username
+            return data
+        except Exception as e:
+            raise serializers.ValidationError({"error": str(e)})
+
+
+class CustomTokenRefreshSerializer(TokenRefreshSerializer):
+    def validate(self, attrs):
+        try:
+            data = super().validate(attrs)
+            access_token = AccessToken(data['access'])
+            user_id = access_token['user_id']
+            user = User.objects.get(id=user_id)
+            data['username'] = user.username
+            return data
+        except Exception as e:
+            raise serializers.ValidationError({"error": str(e)})
+
+
+class CustomTokenVerifySerializer(TokenVerifySerializer):
+    def validate(self, attrs):
+        try:
+            data = super().validate(attrs)
+            token = attrs['token']
+            access_token = AccessToken(token)
+            user_id = access_token['user_id']
+            user = User.objects.get(id=user_id)
+            data['username'] = user.username
+            return data
+        except Exception as e:
+            raise serializers.ValidationError({"error": str(e)})
 
 
 class UserCreateSerializer(BaseUserCreateSerializer):
