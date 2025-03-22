@@ -1,7 +1,7 @@
 ### README.md
 
 ```markdown
-# API для блога с подписками и комментариями
+# API для Yatube
 
 ## Описание
 
@@ -22,15 +22,15 @@ Django REST Framework и Djoser для аутентификации.
 
 ### 1. Клонирование репозитория:
 ```sh
-git clone https://github.com/your-repo/blog-api.git
-cd blog-api
+git clone https://github.com/Awesome-autumn-weirdo/api_final_yatube.git
 ```
 
 ### 2. Создание и активация виртуального окружения:
 ```sh
-python -m venv venv
+python3 -m venv venv # Для Linux и MacOS
+python -m venv venv # Для Windows
 source venv/bin/activate  # Для Linux и MacOS
-venv\Scripts\activate  # Для Windows
+source venv/Scripts/activate  # Для Windows
 ```
 
 ### 3. Установка зависимостей:
