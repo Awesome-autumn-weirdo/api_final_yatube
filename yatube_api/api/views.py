@@ -21,7 +21,7 @@ from .serializers import (
 )
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
-    IsAuthenticated, AllowAny,
+    IsAuthenticated,
 )
 from posts.permissions import IsOwnerOrReadOnly
 

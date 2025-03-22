@@ -89,12 +89,16 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def validate_following(self, value):
         if value == self.context['request'].user:
-            raise serializers.ValidationError("Вы не можете подписаться на самого себя.")
+            raise serializers.ValidationError(
+                "Вы не можете подписаться на самого себя."
+            )
         return value
 
     def validate(self, data):
         if 'following' not in data:
-            raise serializers.ValidationError({"following": "Это поле обязательно."})
+            raise serializers.ValidationError(
+                {"following": "Это поле обязательно."}
+            )
         return data
 
     class Meta:
