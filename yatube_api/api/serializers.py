@@ -1,12 +1,15 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from posts.models import Comment, Post, Follow, Group
 
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 
+User = get_user_model()
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
-        fields = ['id', 'username', 'password']
+        model = User
+        fields = ['id', 'username', 'password', 'email']
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -43,7 +46,9 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    post = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
-        fields = '__all__'
         model = Comment
+        fields = ['id', 'author', 'post', 'text', 'created']
+        read_only_fields = ['author', 'post', 'created']

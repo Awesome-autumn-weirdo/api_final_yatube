@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from rest_framework.filters import SearchFilter
+from rest_framework.viewsets import ModelViewSet
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.serializers import (
@@ -87,18 +89,27 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_id=post_id).order_by('-created')
+        post_id = self.kwargs.get("post_id")
+        return Comment.objects.filter(post_id=post_id)
 
     def perform_create(self, serializer):
-        post_id = self.kwargs['post_id']
+        post_id = self.kwargs.get("post_id")
         post = Post.objects.get(id=post_id)
         serializer.save(author=self.request.user, post=post)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.author != request.user:
+            return Response(
+                {"error": "Вы можете редактировать только свои комментарии."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -109,6 +120,8 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['following__username']
 
     def get_queryset(self):
         return Follow.objects.filter(user=self.request.user)
