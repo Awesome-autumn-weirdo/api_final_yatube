@@ -76,7 +76,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         post_id = self.kwargs['post_id']
         # Проверяем, существует ли пост
-        post = get_object_or_404(Post, id=post_id)
+        #post = get_object_or_404(Post, id=post_id)
 
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
