@@ -1,11 +1,5 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import (
-    TokenVerifySerializer,
-    TokenRefreshSerializer,
-    TokenObtainPairSerializer,
-)
-from rest_framework_simplejwt.tokens import AccessToken
 
 from posts.models import Comment, Post, Follow, Group
 
@@ -14,54 +8,16 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 User = get_user_model()
 
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        try:
-            data = super().validate(attrs)
-            data['username'] = self.user.username
-            return data
-        except Exception as e:
-            raise serializers.ValidationError({"error": str(e)})
-
-
-class CustomTokenRefreshSerializer(TokenRefreshSerializer):
-    def validate(self, attrs):
-        try:
-            data = super().validate(attrs)
-            access_token = AccessToken(data['access'])
-            user_id = access_token['user_id']
-            user = User.objects.get(id=user_id)
-            data['username'] = user.username
-            return data
-        except Exception as e:
-            raise serializers.ValidationError({"error": str(e)})
-
-
-class CustomTokenVerifySerializer(TokenVerifySerializer):
-    def validate(self, attrs):
-        try:
-            data = super().validate(attrs)
-            token = attrs['token']
-            access_token = AccessToken(token)
-            user_id = access_token['user_id']
-            user = User.objects.get(id=user_id)
-            data['username'] = user.username
-            return data
-        except Exception as e:
-            raise serializers.ValidationError({"error": str(e)})
-
-
 class UserCreateSerializer(BaseUserCreateSerializer):
-
     class Meta(BaseUserCreateSerializer.Meta):
         model = User
-        fields = ['id', 'username', 'password', 'email']
+        fields = '__all__'
 
 
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ['id', 'title', 'slug', 'description']
+        fields = '__all__'
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -74,8 +30,8 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'author', 'text', 'pub_date', 'image', 'group']
-
+        fields = '__all__'
+        ordering = ['-pub_date']
 
 class FollowSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
@@ -103,16 +59,15 @@ class FollowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Follow
-        fields = ['user', 'following']
+        fields = '__all__'
 
 
 class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+        slug_field='username', read_only=True
     )
     post = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Comment
-        fields = ['id', 'author', 'post', 'text', 'created']
-        read_only_fields = ['author', 'post', 'created']
+        fields = '__all__'

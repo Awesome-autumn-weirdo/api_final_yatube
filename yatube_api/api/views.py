@@ -1,14 +1,9 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, status
+from rest_framework import viewsets, serializers, permissions
 from rest_framework.generics import get_object_or_404
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
-
-from rest_framework_simplejwt.views import (
-    TokenVerifyView,
-    TokenRefreshView,
-    TokenObtainPairView,
-)
+from rest_framework.pagination import LimitOffsetPagination
+from posts.permissions import IsOwnerOrReadOnly
+from rest_framework.filters import SearchFilter
 
 from posts.models import Post, Comment, Group, Follow
 from .serializers import (
@@ -16,50 +11,20 @@ from .serializers import (
     CommentSerializer,
     GroupSerializer,
     FollowSerializer,
-    CustomTokenVerifySerializer,
-    CustomTokenRefreshSerializer,
-    CustomTokenObtainPairSerializer,
 )
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
     IsAuthenticated,
 )
-from posts.permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
 
 
-class CustomTokenVerifyView(TokenVerifyView):
-    serializer_class = CustomTokenVerifySerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
-
-
-class CustomTokenRefreshView(TokenRefreshView):
-    serializer_class = CustomTokenRefreshSerializer
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all().order_by('-pub_date')
+    queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
-    pagination_class = PageNumberPagination
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    pagination_class = LimitOffsetPagination
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -67,72 +32,50 @@ class PostViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly]
+    pagination_class = None
 
     def get_queryset(self):
-        post_id = self.kwargs['post_id']
-        return Comment.objects.filter(post_id=post_id).order_by('-created')
-
-    def list(self, request, *args, **kwargs):
-        # post_id = self.kwargs['post_id']
-        # Проверяем, существует ли пост
-        # post = get_object_or_404(Post, id=post_id)
-
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        post_id = self.kwargs.get('post_id')
+        return Comment.objects.filter(post_id=post_id)
 
     def perform_create(self, serializer):
-        post_id = self.kwargs['post_id']
-        # Проверяем, существует ли пост
-        post = get_object_or_404(Post, id=post_id)
-
+        post = get_object_or_404(Post, pk=self.kwargs.get('post_id'))
         serializer.save(author=self.request.user, post=post)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
+    filter_backends = [SearchFilter]
+    search_fields = ['following__username']
 
     def get_queryset(self):
-        queryset = Follow.objects.filter(user=self.request.user)
-        search_query = self.request.query_params.get('search', None)
-        if search_query:
-            queryset = queryset.filter(
-                following__username__icontains=search_query
-            )
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        # Фильтруем подписки только для текущего пользователя
+        return Follow.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         user = self.request.user
         following_username = self.request.data.get('following')
-        try:
-            following_user = User.objects.get(username=following_username)
-            # Проверяем, существует ли уже подписка
-            if Follow.objects.filter(user=user,
-                                     following=following_user).exists():
-                return Response(
-                    {"error": "Вы уже подписаны на этого пользователя."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            serializer.save(user=user, following=following_user)
-        except User.DoesNotExist:
-            return Response(
-                {"error": "Пользователь не найден."},
-                status=status.HTTP_404_NOT_FOUND
+
+        # Проверяем, существует ли уже подписка
+        if Follow.objects.filter(
+                user=user, following__username=following_username
+        ).exists():
+            raise serializers.ValidationError(
+                {"error": "Вы уже подписаны на этого пользователя."}
             )
+
+        following_user = get_object_or_404(User,
+                                           username=following_username)
+
+        serializer.save(user=user, following=following_user)
